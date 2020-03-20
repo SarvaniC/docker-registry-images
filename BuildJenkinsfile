@@ -1,0 +1,133 @@
+pipeline {
+  agent any
+
+  environment {
+    def scmVars 		= checkout scm
+
+    // basic variables
+    REGISTRY			= 'tooling.primestreet.aws'
+    REGCREDS			= 'primestreet-registry'
+    //MAILTO			= 'p3u9s7a1s6k8k5b5@primestreet.slack.com'
+
+    // what are we making?
+    IMAGE			= 'testing_image'
+    UPSTREAM_REG		= 'registry.apivista.net'
+    UPSTREAM_CREDS		= 'apivista-registry-creds'
+    BUILDBASE			= 'java'
+    BASE			= 'jre'
+    BASETAG			= 'latest'
+    //DEPLOYJOB			= 'Deploy_apis_agents-api'
+  }
+
+  options {
+    // Discard old builds
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage('Pull base images') {
+      steps {
+        pullBaseImage(
+          registry: "${env.UPSTREAM_REG}",
+          image: "${env.BUILDBASE}",
+          tag: "${env.BASETAG}",
+          credentials: "${env.UPSTREAM_CREDS}"
+        )
+        pullBaseImage(
+          registry: "${env.UPSTREAM_REG}",
+          image: "${env.BASE}",
+          tag: "${env.BASETAG}",
+          credentials: "${env.UPSTREAM_CREDS}"
+        )
+      }
+    }
+    stage('Build test or feature branch but do not push') {
+      when { 
+        anyOf {
+          branch "PSP2*"
+          branch "hotfix*"
+          branch "test*"
+        }
+      }
+      steps {
+        buildPushImage(
+          push: false,
+          registry: "${env.REGISTRY}",
+          image: "${env.IMAGE}",
+          tag: "${env.GIT_COMMIT}",
+          credentials: "${env.REGCREDS}"
+        )
+      }
+    }
+    stage('Build and push main branches') {
+      when { 
+        anyOf {
+          branch "dev"
+          branch "master"
+        }
+      }
+      steps {
+        buildPushImage(
+          registry: "${env.REGISTRY}",
+          image: "${env.IMAGE}",
+          tag: "${env.GIT_COMMIT}",
+          credentials: "${env.REGCREDS}"
+        )
+      }
+    }
+    stage('Build tagged release') {
+      when { buildingTag() }
+      steps {
+        buildPushImage(
+          registry: "${env.REGISTRY}",
+          image: "${env.IMAGE}",
+          tag: "${env.TAG_NAME}",
+          credentials: "${env.REGCREDS}"
+        )
+      }
+    }
+    stage ('Deploy to dev') {
+      when { branch 'dev' }
+      steps {
+        echo "Deploying to Dev: ${env.GIT_COMMIT}"
+        build job: "${env.DEPLOYJOB}", parameters: [
+         [$class: 'StringParameterValue', name: 'ENVIR', value: "development"],
+         [$class: 'StringParameterValue', name: 'COMMIT', value: "${env.GIT_COMMIT}"],
+         [$class: 'StringParameterValue', name: 'TAG', value: "${env.GIT_COMMIT}"]
+        ]
+      }
+    }
+    stage ('Deploy to uat') {
+      when { branch 'master' }
+      steps {
+        echo "Deploying to UAT: ${env.TAG_NAME}"
+        build job: "${env.DEPLOYJOB}", parameters: [
+         [$class: 'StringParameterValue', name: 'ENVIR', value: "uat"],
+         [$class: 'StringParameterValue', name: 'COMMIT', value: "${env.GIT_COMMIT}"],
+         [$class: 'StringParameterValue', name: 'TAG', value: "${env.GIT_COMMIT}"]
+        ]
+      }
+    }
+    stage ('Deploy to production') {
+      when { tag 'v*' }
+      steps {
+        echo "Deploying to Production: ${env.TAG_NAME}"
+        build job: "${env.DEPLOYJOB}", parameters: [
+         [$class: 'StringParameterValue', name: 'ENVIR', value: "production"],
+         [$class: 'StringParameterValue', name: 'COMMIT', value: "${env.GIT_COMMIT}"],
+         [$class: 'StringParameterValue', name: 'TAG', value: "${env.TAG_NAME}"]
+        ]
+      }
+    }
+  }
+  post {
+    cleanup {
+      sh "docker rmi ${env.REGISTRY}/${env.IMAGE}:${env.TAG_NAME}   || exit 0"
+      sh "docker rmi ${env.REGISTRY}/${env.IMAGE}:${env.GIT_COMMIT} || exit 0"
+
+      cleanWs()
+      wsCleaner()
+    }
+  }
+}
