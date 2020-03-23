@@ -10,7 +10,7 @@ pipeline {
     //MAILTO			= 'p3u9s7a1s6k8k5b5@primestreet.slack.com'
 
     // what are we making?
-    IMAGE			= 'testing_image'
+    IMAGE			= 'gutentag'
     UPSTREAM_REG		= 'registry.apivista.net'
     UPSTREAM_CREDS		= 'apivista-registry-creds'
     BUILDBASE			= 'java'
