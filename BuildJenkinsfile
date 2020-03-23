@@ -13,8 +13,8 @@ pipeline {
     IMAGE			= 'gutentag'
     //UPSTREAM_REG		= 'registry.apivista.net'
     //UPSTREAM_CREDS		= 'apivista-registry-creds'
-    BUILDBASE			= 'java'
-    BASE			= 'jre'
+    //BUILDBASE			= 'java'
+    //BASE			= 'jre'
     BASETAG			= 'latest'
     //DEPLOYJOB			= 'Deploy_apis_agents-api'
   }
@@ -29,16 +29,16 @@ pipeline {
     stage('Pull base images') {
       steps {
         pullBaseImage(
-          registry: "${env.UPSTREAM_REG}",
+          //registry: "${env.UPSTREAM_REG}",
           image: "${env.BUILDBASE}",
           tag: "${env.BASETAG}",
-          credentials: "${env.UPSTREAM_CREDS}"
+          //credentials: "${env.UPSTREAM_CREDS}"
         )
         pullBaseImage(
-          registry: "${env.UPSTREAM_REG}",
+          //registry: "${env.UPSTREAM_REG}",
           image: "${env.BASE}",
           tag: "${env.BASETAG}",
-          credentials: "${env.UPSTREAM_CREDS}"
+          //credentials: "${env.UPSTREAM_CREDS}"
         )
       }
     }
@@ -53,10 +53,10 @@ pipeline {
       steps {
         buildPushImage(
           push: false,
-          registry: "${env.REGISTRY}",
+          //registry: "${env.REGISTRY}",
           image: "${env.IMAGE}",
           tag: "${env.GIT_COMMIT}",
-          credentials: "${env.REGCREDS}"
+          //credentials: "${env.REGCREDS}"
         )
       }
     }
@@ -69,10 +69,10 @@ pipeline {
       }
       steps {
         buildPushImage(
-          registry: "${env.REGISTRY}",
+          //registry: "${env.REGISTRY}",
           image: "${env.IMAGE}",
           tag: "${env.GIT_COMMIT}",
-          credentials: "${env.REGCREDS}"
+          //credentials: "${env.REGCREDS}"
         )
       }
     }
@@ -80,10 +80,10 @@ pipeline {
       when { buildingTag() }
       steps {
         buildPushImage(
-          registry: "${env.REGISTRY}",
+          //registry: "${env.REGISTRY}",
           image: "${env.IMAGE}",
           tag: "${env.TAG_NAME}",
-          credentials: "${env.REGCREDS}"
+          //credentials: "${env.REGCREDS}"
         )
       }
     }
@@ -123,8 +123,8 @@ pipeline {
   }
   post {
     cleanup {
-      sh "docker rmi ${env.REGISTRY}/${env.IMAGE}:${env.TAG_NAME}   || exit 0"
-      sh "docker rmi ${env.REGISTRY}/${env.IMAGE}:${env.GIT_COMMIT} || exit 0"
+      sh "docker rmi ${env.IMAGE}:${env.TAG_NAME}   || exit 0"
+      sh "docker rmi ${env.IMAGE}:${env.GIT_COMMIT} || exit 0"
 
       cleanWs()
       wsCleaner()
