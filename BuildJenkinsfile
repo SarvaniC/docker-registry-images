@@ -5,14 +5,14 @@ pipeline {
     def scmVars 		= checkout scm
 
     // basic variables
-    REGISTRY			= 'tooling.primestreet.aws'
-    REGCREDS			= 'primestreet-registry'
+    //REGISTRY			= 'tooling.primestreet.aws'
+    //REGCREDS			= 'primestreet-registry'
     //MAILTO			= 'p3u9s7a1s6k8k5b5@primestreet.slack.com'
 
     // what are we making?
     IMAGE			= 'gutentag'
-    UPSTREAM_REG		= 'registry.apivista.net'
-    UPSTREAM_CREDS		= 'apivista-registry-creds'
+    //UPSTREAM_REG		= 'registry.apivista.net'
+    //UPSTREAM_CREDS		= 'apivista-registry-creds'
     BUILDBASE			= 'java'
     BASE			= 'jre'
     BASETAG			= 'latest'
