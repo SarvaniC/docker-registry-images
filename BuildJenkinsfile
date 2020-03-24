@@ -52,7 +52,7 @@ pipeline {
       }
       steps {
         buildPushImage(
-          push: false,
+          push: "false",
           //registry: "${env.REGISTRY}",
           image: "${env.IMAGE}",
           tag: "${env.GIT_COMMIT}",
